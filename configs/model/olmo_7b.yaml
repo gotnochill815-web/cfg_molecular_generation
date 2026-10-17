@@ -1,0 +1,21 @@
+model_name: /path/to/your/base-model
+
+load_in_4bit: true
+
+device_map: null
+
+gradient_checkpointing: true
+
+special_tokens:
+  - "<QED>"
+  - "<LOGP>"
+  - "<TPSA>"
+  - "<SAS>"
+  - "<NULL>"
+  - "<pstart>"
+  - "<molstart>"
+
+lora:
+  r: 8
+  alpha: 16
+  dropout: 0.05

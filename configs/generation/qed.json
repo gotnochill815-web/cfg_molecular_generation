@@ -1,0 +1,13 @@
+{
+  "properties": {
+    "qed": {
+      "sample_points": [
+        0.3,
+        0.5,
+        0.7
+      ],
+      "num_samples": 10,
+      "temperature": 1.0
+    }
+  }
+}

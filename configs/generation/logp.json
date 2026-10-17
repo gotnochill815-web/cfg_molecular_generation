@@ -1,0 +1,13 @@
+{
+  "properties": {
+    "logp": {
+      "sample_points": [
+        2.0,
+        4.0,
+        6.0
+      ],
+      "num_samples": 100,
+      "temperature": 1.0
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "properties": {
+    "sas": {
+      "sample_points": [
+        2.0,
+        3.0,
+        4.0
+      ],
+      "num_samples": 10,
+      "temperature": 1.0
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "properties": {
+    "tpsa": {
+      "sample_points": [
+        40.0,
+        80.0,
+        120.0
+      ],
+      "num_samples": 10,
+      "temperature": 1.0
+    }
+  }
+}

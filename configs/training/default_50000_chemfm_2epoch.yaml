@@ -1,0 +1,24 @@
+accelerator: gpu
+devices: 1
+strategy: auto
+precision: bf16-mixed
+batch_size: 12
+gradient_accumulation_steps: 4
+epochs: 2
+learning_rate: 0.0006
+min_learning_rate: 6.0e-05
+weight_decay: 0.01
+warmup_steps: 17
+max_grad_norm: 1.0
+num_workers: 2
+dropout_prob: 0.2
+conditioning:
+  mode: random
+monitor: val/loss
+mode: min
+check_val_every_n_epoch: 1
+save_top_k: 3
+output_dir: checkpoints/lora_cfg_50000_chemfm_2epoch
+logging_steps: 25
+log_every_n_steps: 25
+seed: 0

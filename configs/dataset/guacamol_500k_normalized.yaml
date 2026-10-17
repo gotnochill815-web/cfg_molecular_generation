@@ -1,0 +1,14 @@
+name: guacamol_500k_normalized
+max_length: 128
+smiles_column: smiles
+property_columns:
+  qed: qed
+  logp: logp
+  sas: sas
+  tpsa: tpsa
+train:
+  path: data/guacamol_500k/normalized/train_500k_refnorm.csv
+validation:
+  path: data/guacamol_500k/normalized/val_500k_refnorm.csv
+test:
+  path: data/guacamol_500k/normalized/test_500k_refnorm.csv
