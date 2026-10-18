@@ -8,7 +8,7 @@ The project is designed to evaluate different compatible causal language models 
 
 - Classifier-free guidance using conditional and unconditional model predictions.
 - Molecular property conditioning for QED, LogP, topological polar surface area (TPSA), and synthetic accessibility score (SAS).
-- Configurable guidance scale, with a default of 2.0.
+- Property-specific CFG guidance defaults selected from preliminary sweeps: LogP=1.5, TPSA=2.0, QED=2.5, and SAS=2.5.
 - LoRA-based fine-tuning and configurable model/tokenizer paths.
 - SMILES validity, uniqueness, novelty, and property-error evaluation.
 - Dataset-specific normalization statistics.
@@ -22,7 +22,7 @@ CFG combines conditional and unconditional predictions:
 
 The model receives a property-conditioned prompt and an unconditional prompt. The guidance scale controls the influence of the requested molecular properties during generation.
 
-The default guidance scale is 2.0. It can be changed using `--guidance-scale`.
+The recommended defaults from preliminary sweeps are property-specific: LogP=1.5, TPSA=2.0, QED=2.5, and SAS=2.5. These are starting points selected on one trained adapter, not universal optima. Pass `--guidance-scale` to override the default. For multi-property configurations, the runner retains a generic default of 2.0 unless a scale is supplied explicitly.
 
 ## Repository Structure
 
@@ -48,6 +48,20 @@ Single-property generation configurations are provided for:
 - SAS: `configs/generation/sas.json`
 
 Use the normalization statistics associated with the dataset and model used for the particular experiment. Do not reuse statistics from another dataset without verification.
+
+### Preliminary CFG scale selections and target values
+
+| Property | Suggested CFG scale | Target values |
+|---|---:|---|
+| LogP | 1.5 | 2.0, 4.0, 6.0 |
+| TPSA | 2.0 | 40.0, 80.0, 120.0 |
+| QED | 2.5 | 0.3, 0.5, 0.7 |
+| SAS | 2.5 | 2.0, 3.0, 4.0 |
+
+These guidance scales are preliminary choices from small sweeps on the
+500k GuacaMol-derived setup. Re-evaluate them when the model, dataset, or
+sampling settings change. The target values are ChemFM-compatible; the model
+architecture and CFG sampling method are not an exact ChemFM reproduction.
 
 ## Configure a Model
 
@@ -75,7 +89,7 @@ python -m src.generation.chemfm_cfg_generate \
   --adapter-dir "$ADAPTER_DIR" \
   --tokenizer-dir "$TOKENIZER_DIR" \
   --output-csv "outputs/generation/${MODEL_NAME}_qed_cfg.csv" \
-  --guidance-scale 2.0
+  --guidance-scale 2.5
 ```
 
 Replace `qed.json` with `logp.json`, `tpsa.json`, or `sas.json` to generate molecules for another property.

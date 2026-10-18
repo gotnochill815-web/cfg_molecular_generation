@@ -288,7 +288,7 @@ def main():
         default=str(ROOT / "data/guacamol/guacamol_50000_normalized/train_50000_refnorm.csv"),
         help="Training CSV used to evaluate novelty.")
     parser.add_argument("--guidance-scale", type=float, default=None,
-                        help="Defaults: LogP=1.5, TPSA=2.0; explicit values override.")
+                        help="Defaults: LogP=1.5, TPSA=2.0, QED=2.5, SAS=2.5; explicit values override.")
     parser.add_argument("--top-p", type=float, default=1.0)
     parser.add_argument(
         "--max-new-tokens",
@@ -330,11 +330,17 @@ def main():
 
     if args.guidance_scale is None:
         configured_properties = set(properties_config)
-        if configured_properties == {"logp"}:
-            args.guidance_scale = 1.5
-        elif configured_properties == {"tpsa"}:
-            args.guidance_scale = 2.0
+        property_defaults = {
+            "logp": 1.5,
+            "tpsa": 2.0,
+            "qed": 2.5,
+            "sas": 2.5,
+        }
+        if len(configured_properties) == 1:
+            only_property = next(iter(configured_properties))
+            args.guidance_scale = property_defaults.get(only_property, 2.0)
         else:
+            # Mixed-property generation retains the generic default.
             args.guidance_scale = 2.0
 
     # Validate all config entries before allocating model memory.
