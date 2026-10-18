@@ -264,29 +264,33 @@ def main():
     )
     parser.add_argument(
         "--adapter-dir",
-        default=str(
-            ROOT / "checkpoints/lora_cfg_50000_chemfm_1epoch/adapter"
-        ),
+        required=True,
+        help="Adapter directory matching the selected base model and tokenizer.",
     )
     parser.add_argument(
         "--tokenizer-dir",
-        default=str(
-            ROOT / "checkpoints/lora_cfg_50000_chemfm_1epoch/tokenizer"
-        ),
+        required=True,
+        help="Tokenizer directory matching the selected trained adapter.",
     )
     parser.add_argument(
         "--base-model",
-        default=None,
+        required=True,
+        help="Base model used to train the adapter.",
     )
     parser.add_argument(
         "--output-csv",
         required=True,
     )
-    parser.add_argument("--stats-file", default=None,
-                        help="JSON statistics matching the selected model.")
-    parser.add_argument("--training-smiles-csv",
-        default=str(ROOT / "data/guacamol/guacamol_50000_normalized/train_50000_refnorm.csv"),
-        help="Training CSV used to evaluate novelty.")
+    parser.add_argument(
+        "--stats-file",
+        required=True,
+        help="Normalization statistics used during training.",
+    )
+    parser.add_argument(
+        "--training-smiles-csv",
+        required=True,
+        help="Training SMILES CSV used to calculate novelty.",
+    )
     parser.add_argument("--guidance-scale", type=float, default=None,
                         help="Defaults: LogP=1.5, TPSA=2.0, QED=2.5, SAS=2.5; explicit values override.")
     parser.add_argument("--top-p", type=float, default=1.0)

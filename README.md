@@ -68,10 +68,12 @@ architecture and CFG sampling method are not an exact ChemFM reproduction.
 Set paths to the base model, its matching trained CFG adapter, and tokenizer. These values are experiment-specific.
 
 ```bash
-export MODEL_NAME="your-model-name"
-export BASE_MODEL_PATH="/path/to/base-model"
-export ADAPTER_DIR="/path/to/trained-cfg-adapter"
-export TOKENIZER_DIR="/path/to/matching-tokenizer"
+export MODEL_NAME="olmo-7b-cfg-guacamol-500k"
+export BASE_MODEL_PATH="/home/intern1/demo/demo_model"
+export ADAPTER_DIR="checkpoints/lora_cfg_500000_chemfm_2epoch/adapter"
+export TOKENIZER_DIR="checkpoints/lora_cfg_500000_chemfm_2epoch/tokenizer"
+export STATS_FILE="configs/scaling/guacamol_500k.json"
+export TRAINING_SMILES_CSV="data/guacamol_500k/normalized/train_500k_refnorm.csv"
 ```
 
 `MODEL_NAME` is a label for identifying experiments. The actual paths must point to the correct model, adapter, and tokenizer.
@@ -88,6 +90,8 @@ python -m src.generation.chemfm_cfg_generate \
   --base-model "$BASE_MODEL_PATH" \
   --adapter-dir "$ADAPTER_DIR" \
   --tokenizer-dir "$TOKENIZER_DIR" \
+  --stats-file "$STATS_FILE" \
+  --training-smiles-csv "$TRAINING_SMILES_CSV" \
   --output-csv "outputs/generation/${MODEL_NAME}_qed_cfg.csv" \
   --guidance-scale 2.5
 ```
