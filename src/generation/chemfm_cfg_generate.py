@@ -6,6 +6,7 @@ import json
 import math
 import os
 import random
+import statistics
 import sys
 import time
 from pathlib import Path
@@ -286,7 +287,8 @@ def main():
     parser.add_argument("--training-smiles-csv",
         default=str(ROOT / "data/guacamol/guacamol_50000_normalized/train_50000_refnorm.csv"),
         help="Training CSV used to evaluate novelty.")
-    parser.add_argument("--guidance-scale", type=float, default=2.0)
+    parser.add_argument("--guidance-scale", type=float, default=None,
+                        help="Defaults: LogP=1.5, TPSA=2.0; explicit values override.")
     parser.add_argument("--top-p", type=float, default=1.0)
     parser.add_argument(
         "--max-new-tokens",
@@ -309,7 +311,7 @@ def main():
     if not args.base_model:
         parser.error("Pass --base-model with the base model path")
 
-    if args.guidance_scale < 0:
+    if args.guidance_scale is not None and args.guidance_scale < 0:
         raise ValueError("--guidance-scale must be >= 0")
     if not (0 < args.top_p <= 1):
         raise ValueError("--top-p must be in (0, 1]")
@@ -325,6 +327,15 @@ def main():
     properties_config = config.get("properties")
     if not isinstance(properties_config, dict) or not properties_config:
         raise ValueError("Generation config must contain a nonempty 'properties' object.")
+
+    if args.guidance_scale is None:
+        configured_properties = set(properties_config)
+        if configured_properties == {"logp"}:
+            args.guidance_scale = 1.5
+        elif configured_properties == {"tpsa"}:
+            args.guidance_scale = 2.0
+        else:
+            args.guidance_scale = 2.0
 
     # Validate all config entries before allocating model memory.
     validated = []
@@ -438,7 +449,7 @@ def main():
                     verbose=args.verbose,
                 )
 
-                smiles, measured = measure_properties(generated)
+                smiles, measured = measure_properties(generated.replace(' ', ''))
                 valid = bool(smiles)
                 novel = bool(valid and smiles not in train_smiles)
 
@@ -489,7 +500,9 @@ def main():
 
     valid_rows = [row for row in records if row["valid"]]
     unique_smiles = {row["smiles"] for row in valid_rows}
-    novel_rows = [row for row in valid_rows if row["novel"]]
+    novel_unique_smiles = {
+        row["smiles"] for row in valid_rows if row["novel"]
+    }
 
     summary = {
         "generation_config": str(config_path),
@@ -504,9 +517,10 @@ def main():
         "unique_fraction_among_valid": (
             len(unique_smiles) / len(valid_rows) if valid_rows else 0.0
         ),
-        "novel_valid_generations": len(novel_rows),
-        "novelty_among_valid": (
-            len(novel_rows) / len(valid_rows) if valid_rows else 0.0
+        "novel_unique_smiles": len(novel_unique_smiles),
+        "novelty_among_unique": (
+            len(novel_unique_smiles) / len(unique_smiles)
+            if unique_smiles else 0.0
         ),
         "elapsed_seconds": round(time.time() - started, 2),
         "output_csv": str(output_path),
@@ -520,9 +534,13 @@ def main():
             if row[f"{name}_absolute_error"] is not None
         ]
         if errors:
+            mean_deviation = sum(errors) / len(errors)
             error_summary[name] = {
                 "n": len(errors),
-                "mean_absolute_error": sum(errors) / len(errors),
+                "mad": mean_deviation,
+                "absolute_deviation_std": (
+                    statistics.stdev(errors) if len(errors) > 1 else None
+                ),
             }
     summary["property_error_summary"] = error_summary
 
