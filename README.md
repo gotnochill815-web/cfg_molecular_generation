@@ -123,7 +123,7 @@ Always pass the matching statistics file explicitly when generating molecules:
 --stats-file configs/scaling/guacamol_500k.json
 ```
 
-The file `src/utils/property_scaling.py` contains a separate set of legacy fallback constants. The current `src/generation/chemfm_cfg_generate.py` runner uses those fallback constants only when no `--stats-file` is supplied. For the current `guacamol_500k` adapter, do not omit `--stats-file`.
+The file `src/utils/property_scaling.py` contains a separate set of legacy fallback constants that exactly match `configs/scaling/guacamol_50k.json`, not the 500K statistics. Some generic generation scripts call this utility directly and default to the 50K adapter; that is consistent with those scripts' defaults. The current `src/generation/chemfm_cfg_generate.py` runner uses those fallback constants only when no `--stats-file` is supplied. When using the `guacamol_500k` adapter, always pass the matching 500K statistics file explicitly and verify that any custom script does the same.
 
 The generation JSON contains **raw target values** such as TPSA `80` and SAS `3`. The runner converts these values using the specified statistics before conditioning the model. Evaluation property values and absolute property errors are reported in the original/raw property units.
 
@@ -131,7 +131,36 @@ The generation JSON contains **raw target values** such as TPSA `80` and SAS `3`
 
 For the current cluster copy, the normalization formula was independently checked against all 400,000 training rows. The raw and normalized rows had matching SMILES order, and the maximum absolute difference between the stored normalized values and the recomputed z-scores was approximately `1e-15` for each property. A 1,000-molecule descriptor audit also found the stored QED, LogP, TPSA, and SAS values reproducible with the installed RDKit implementation within the CSV's rounding precision.
 
-These checks support that the current z-score transformation is internally consistent. They do **not** establish that the 500K-derived dataset is a uniform random sample of a particular upstream GuacaMol split, or explain why its raw descriptor statistics differ from statistics reported by other implementations or datasets. Record the data source, selection procedure, descriptor implementation/version, and split sizes when making benchmark comparisons. Do not replace the current model's normalization statistics with another dataset's statistics without verifying compatibility with the data used during training.
+These checks support that the current z-score transformation is internally consistent. They do not, by themselves, establish how the 500K-derived files were originally selected or explain why their raw descriptor statistics differ from other datasets or implementations.
+
+#### Official GuacaMol partition audit
+
+An exact-SMILES membership audit was run against the official GuacaMol v1 train, validation, and test files. The official files contain 1,273,104 train, 79,568 validation, and 238,706 test molecules; their exact-string intersections are zero.
+
+| Local split | Rows | Exact matches in official combined collection |
+|---|---:|---:|
+| Local train | 400,000 | 399,679 (99.92%) |
+| Local validation | 50,000 | 49,963 (99.93%) |
+| Local test | 50,000 | 49,955 (99.91%) |
+
+The local training split's official-partition membership was:
+
+| Official partition | Exact matches in local train |
+|---|---:|
+| Official train | 320,119 |
+| Official validation | 19,885 |
+| Official test | 59,675 |
+| **Official validation + test combined** | **79,560 (19.89% of local train)** |
+
+The three local splits have zero pairwise exact-SMILES overlap. However, local train contains 19,885 molecules that exactly match official validation entries and 59,675 that exactly match official test entries. This strongly indicates that the local files are sampled from the combined GuacaMol collection rather than preserving the official partition boundaries, although the membership audit alone cannot prove the exact data-preparation procedure. The unmatched rows (321 train, 37 validation, 45 test) were not resolved by this exact-string check, and equivalent structures written as different SMILES have not been exhaustively checked by canonicalization.
+
+**Benchmarking implication:** describe these files as a custom 500K GuacaMol-derived dataset/split. Do not describe its local test set as the untouched official GuacaMol test partition or claim a strict official split-preserving benchmark reproduction. In particular, official test molecules were included in local training. For a strict official-split evaluation, construct a separate dataset that samples training molecules only from official train and retains official validation/test membership.
+
+#### Retrospective inference-normalization audit
+
+A retrospective audit of 34 available generation summary/CSV pairs associated with the 500K adapter compared recorded raw targets against their stored normalized target columns. The audited LogP, QED, SAS, and TPSA target values matched the guacamol_500k z-score formula to floating-point precision (maximum observed discrepancies were approximately 5.6e-17 for LogP, 8.4e-17 for QED, 1.4e-17 for SAS, and 1.2e-16 for TPSA). For these audited target fields, the values matched the 500K statistics, not the 50K fallback constants. This is evidence for the audited outputs, not a guarantee about uninspected future runs.
+
+Record the data source, selection procedure, descriptor implementation/version, split sizes, and normalization-statistics file when making benchmark comparisons. Do not replace the current model's normalization statistics with another dataset's statistics without verifying compatibility with the data used during training.
 
 ## Configure a Model
 
