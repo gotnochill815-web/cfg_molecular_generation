@@ -2,14 +2,16 @@
 Generator for Classifier-Free Guidance (CFG).
 
 The unconditional prompt is training-aligned with the
-50K model's CFG dropout implementation:
+CFG dropout implementation used by the collator:
 
-    <pstart>
+    <NULL>
     <molstart>
 """
 
 from src.cfg.decoder import cfg_decode
 from src.generation.prompt_builder import build_prompt
+
+UNCONDITIONAL_PROMPT = "<NULL>\n<molstart>"
 
 
 def generate_molecule(
@@ -38,17 +40,17 @@ def generate_molecule(
     )
 
     # IMPORTANT:
-    # build_prompt() with no properties gives exactly the
-    # unconditional format used during training dropout:
+    # Training CFG dropout uses:
     #
-    # <pstart>
+    # <NULL>
     # <molstart>
     #
+    # Therefore inference must use the same unconditional prompt.
     smiles = cfg_decode(
         model=model,
         tokenizer=tokenizer,
         conditional_prompt=conditional_prompt,
-        unconditional_prompt="<NULL>\n<molstart>",
+        unconditional_prompt=UNCONDITIONAL_PROMPT,
         guidance_scale=guidance_scale,
         temperature=temperature,
         top_p=top_p,
@@ -99,7 +101,7 @@ def generate_multiple(
     print(f"SAS             : {sas}")
 
     print("\nTraining-aligned unconditional prompt:")
-    print(repr(build_prompt()))
+    print(repr(UNCONDITIONAL_PROMPT))
 
     print("=" * 70)
 

@@ -51,6 +51,12 @@ except Exception as exc:
 def canonical_smiles(smiles):
     if not smiles:
         return ""
+    # RDKit treats whitespace as the start of a molecule name, so a decoded
+    # string such as "CC N" would silently parse as "CC". Remove whitespace
+    # before parsing so the whole generated string is evaluated.
+    smiles = "".join(str(smiles).split())
+    if not smiles:
+        return ""
     try:
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
@@ -426,7 +432,7 @@ def main():
                     verbose=args.verbose,
                 )
 
-                smiles, measured = measure_properties(generated.replace(' ', ''))
+                smiles, measured = measure_properties(generated)
                 valid = bool(smiles)
                 novel = bool(valid and smiles not in train_smiles)
 

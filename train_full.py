@@ -18,7 +18,6 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from src.utils.config import load_yaml
 from src.training.load_model import load_model
 from src.dataset.dataset import load_datasets
-from src.training.collator import CFGDataCollator
 
 from src.lightning.lightning_module import CFGLightningModule
 from src.lightning.datamodule import CFGDataModule
