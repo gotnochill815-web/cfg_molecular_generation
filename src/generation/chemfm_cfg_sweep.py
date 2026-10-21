@@ -11,14 +11,16 @@ import torch
 
 from src.cfg.decoder import cfg_decode
 from src.generation.prompt_builder import build_prompt
-from src.utils.property_scaling import normalize_targets
 from src.generation.chemfm_cfg_generate import (
     ROOT,
     PROPERTIES,
     load_model,
+    load_property_stats,
     load_training_smiles,
     measure_properties,
+    normalize_targets_with_stats,
     validate_condition_config,
+    verify_stats_match_dataset,
 )
 
 
@@ -61,6 +63,17 @@ def main():
         ),
     )
 
+    parser.add_argument(
+        "--stats-file",
+        required=True,
+        help="Normalization statistics used to train the adapter.",
+    )
+    parser.add_argument(
+        "--training-smiles-csv",
+        required=True,
+        help="Normalized training CSV used for novelty and stats checks.",
+    )
+
     args = parser.parse_args()
 
     if args.samples_per_target < 1:
@@ -72,6 +85,9 @@ def main():
     if not 0 < args.top_p <= 1:
         parser.error("--top-p must be in (0, 1]")
 
+    stats = load_property_stats(args.stats_file)
+    verify_stats_match_dataset(stats, args.training_smiles_csv)
+
     config_path = Path(args.generation_config)
     with config_path.open() as f:
         config = json.load(f)
@@ -79,7 +95,7 @@ def main():
     # Validate every condition before loading the large model.
     condition_groups = []
     for key, spec in config["properties"].items():
-        names = validate_condition_config(key, spec)
+        names = validate_condition_config(key, spec, stats)
         for point_index, point in enumerate(spec["sample_points"]):
             values = [point] if len(names) == 1 and not isinstance(
                 point, (list, tuple)
@@ -117,7 +133,7 @@ def main():
         args.tokenizer_dir,
     )
 
-    train_smiles = load_training_smiles()
+    train_smiles = load_training_smiles(args.training_smiles_csv)
     unconditional_prompt = "<NULL>\n<molstart>"
     comparisons = []
 
@@ -138,7 +154,7 @@ def main():
         print("=" * 70)
 
         for key, spec, point_index, raw_targets in condition_groups:
-            normalized = normalize_targets(**raw_targets)
+            normalized = normalize_targets_with_stats(raw_targets, stats)
             conditional_prompt = build_prompt(**normalized)
 
             temperature = (

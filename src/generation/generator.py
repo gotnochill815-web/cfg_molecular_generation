@@ -26,6 +26,7 @@ def generate_molecule(
     stop_newline=True,
     verbose=False,
     targets_are_raw=False,
+    property_stats=None,
 ):
     """
     Generate one molecule using classifier-free guidance.
@@ -33,14 +34,19 @@ def generate_molecule(
 
     # Convert raw physical targets to the scale used during training.
     # Default False preserves existing calls that already pass normalized values.
+    # property_stats must come from load_property_stats() for this adapter.
     if targets_are_raw:
         from src.utils.property_scaling import normalize_targets
 
+        if property_stats is None:
+            raise ValueError(
+                "targets_are_raw=True requires property_stats loaded from the "
+                "adapter's statistics file."
+            )
+
         scaled = normalize_targets(
-            qed=qed,
-            logp=logp,
-            tpsa=tpsa,
-            sas=sas,
+            {"qed": qed, "logp": logp, "tpsa": tpsa, "sas": sas},
+            property_stats,
         )
         qed = scaled["qed"]
         logp = scaled["logp"]
@@ -100,6 +106,7 @@ def generate_multiple(
     stop_newline=True,
     verbose=False,
     targets_are_raw=False,
+    property_stats=None,
 ):
     """
     Generate multiple molecules under the same property condition.
@@ -146,6 +153,7 @@ def generate_multiple(
                 stop_newline=stop_newline,
                 verbose=verbose,
                 targets_are_raw=targets_are_raw,
+                property_stats=property_stats,
             )
 
             molecules.append(smiles)

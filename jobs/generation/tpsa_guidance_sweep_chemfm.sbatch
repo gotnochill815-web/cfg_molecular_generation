@@ -18,6 +18,8 @@ if [ -e "$OUTDIR" ]; then
 fi
 
 test -f configs/generation/tpsa.json
+test -f configs/scaling/guacamol_50k.json
+test -f data/guacamol/guacamol_50000_normalized/train_50000_refnorm.csv
 test -f src/generation/tpsa_cfg_sweep_chemfm.py
 test -f checkpoints/lora_cfg_50000_chemfm_2epoch/adapter/adapter_config.json
 test -f checkpoints/lora_cfg_50000_chemfm_2epoch/tokenizer/tokenizer.json
@@ -39,7 +41,9 @@ python -u -m src.generation.tpsa_cfg_sweep_chemfm \
   --output-dir "$OUTDIR" \
   --base-model /home/intern1/demo/demo_model \
   --adapter-dir checkpoints/lora_cfg_50000_chemfm_2epoch/adapter \
-  --tokenizer-dir checkpoints/lora_cfg_50000_chemfm_2epoch/tokenizer
+  --tokenizer-dir checkpoints/lora_cfg_50000_chemfm_2epoch/tokenizer \
+  --stats-file configs/scaling/guacamol_50k.json \
+  --training-smiles-csv data/guacamol/guacamol_50000_normalized/train_50000_refnorm.csv
 
 echo "===== SWEEP FINISHED ====="
 date
