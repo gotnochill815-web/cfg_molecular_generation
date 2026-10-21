@@ -12,7 +12,6 @@ Supports:
 """
 
 import random
-import torch
 
 
 class CFGDataCollator:
@@ -274,8 +273,6 @@ class CFGDataCollator:
 
         # Ignore everything through <molstart>.
         for i in range(len(labels)):
-
-            input_ids = labels[i]
 
             mol_positions = (
                 (encoded["input_ids"][i] == self.molstart_id)

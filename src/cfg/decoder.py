@@ -249,8 +249,6 @@ def cfg_decode(
     uncond_ids = uncond_inputs["input_ids"]
     uncond_mask = uncond_inputs["attention_mask"]
 
-    prompt_len = cond_ids.shape[1]
-
     eos_id = tokenizer.eos_token_id
 
     newline_ids = set(
@@ -268,13 +266,10 @@ def cfg_decode(
         tokenizer
     )
 
-    vocab_size = len(tokenizer)
-
     paren_delta = structure["paren_delta"]
     bracket_delta = structure["bracket_delta"]
     min_paren_prefix = structure["min_paren_prefix"]
     min_bracket_prefix = structure["min_bracket_prefix"]
-    has_separator = structure["has_separator"]
 
     # GPU tensors for fast structural masking.
 
