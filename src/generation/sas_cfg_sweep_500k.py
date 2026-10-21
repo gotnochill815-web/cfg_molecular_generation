@@ -20,6 +20,7 @@ from src.generation.chemfm_cfg_generate import (
     load_training_smiles,
     measure_properties,
     normalize_targets_with_stats,
+    verify_stats_match_dataset,
     validate_condition_config,
 )
 
@@ -82,6 +83,7 @@ def main():
     if not stats_path.is_absolute():
         stats_path = ROOT / stats_path
     stats = load_property_stats(stats_path)
+    verify_stats_match_dataset(stats, args.training_smiles_csv)
 
     if "sas" not in config.get("properties", {}):
         parser.error("Generation config must contain a 'sas' property entry")

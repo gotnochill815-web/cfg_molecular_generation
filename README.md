@@ -33,7 +33,7 @@ Guidance scales are experiment-dependent. The repository's preliminary single-pr
 - `src/lightning/`: training modules and data handling.
 - `src/dataset/`: dataset-processing modules.
 - `src/evaluation/`: molecular evaluation metrics.
-- `src/utils/`: utilities, including legacy property-scaling constants.
+- `src/utils/`: utilities, including the shared property-normalization helpers.
 - `configs/generation/`: property-target generation configurations.
 - `configs/scaling/`: dataset-specific inference normalization statistics.
 - `configs/dataset/`: dataset paths and property-column mappings used for training.
@@ -123,7 +123,7 @@ Always pass the matching statistics file explicitly when generating molecules:
 --stats-file configs/scaling/guacamol_500k.json
 ```
 
-The file `src/utils/property_scaling.py` contains a separate set of legacy fallback constants. The current `src/generation/chemfm_cfg_generate.py` runner uses those fallback constants only when no `--stats-file` is supplied. For the current `guacamol_500k` adapter, do not omit `--stats-file`.
+Every generation runner requires `--stats-file`; there are no built-in fallback statistics. `src/utils/property_scaling.py` loads the file and, at startup, compares it against the `property_stats*.json` saved next to `--training-smiles-csv` (e.g. `data/guacamol_500k/normalized/property_stats_500k.json`). The run stops if any mean or standard deviation differs, and prints a warning if no such file is found. Use `configs/scaling/guacamol_50k.json` only with adapters trained on the 50K split.
 
 The generation JSON contains **raw target values** such as TPSA `80` and SAS `3`. The runner converts these values using the specified statistics before conditioning the model. Evaluation property values and absolute property errors are reported in the original/raw property units.
 

@@ -27,7 +27,12 @@ sys.path.insert(0, str(ROOT))
 
 from src.cfg.decoder import cfg_decode
 from src.generation.prompt_builder import build_prompt
-from src.utils.property_scaling import PROPERTY_STATS
+from src.utils.property_scaling import (
+    PROPERTIES,
+    load_property_stats,
+    normalize_targets as normalize_targets_with_stats,
+    verify_stats_match_dataset,
+)
 
 RDLogger.DisableLog("rdApp.*")
 
@@ -42,45 +47,6 @@ try:
     SASCORER = sascorer
 except Exception as exc:
     print(f"Warning: SAS calculation unavailable: {exc}")
-
-PROPERTIES = ("qed", "logp", "tpsa", "sas")
-
-def load_property_stats(stats_file=None):
-    """Load scaling statistics matching the selected model or dataset."""
-    if stats_file is None:
-        return dict(PROPERTY_STATS)
-
-    path = Path(stats_file).expanduser()
-    with path.open() as handle:
-        payload = json.load(handle)
-
-    rows = payload.get("properties", payload)
-    result = {}
-    for name in PROPERTIES:
-        item = rows.get(name)
-        if not isinstance(item, dict) or "mean" not in item or "std" not in item:
-            raise ValueError(f"Statistics file has no valid mean/std for {name}")
-        mean, std = float(item["mean"]), float(item["std"])
-        if std <= 0:
-            raise ValueError(f"Standard deviation for {name} must be positive")
-        result[name] = (mean, std)
-    return result
-
-
-def normalize_targets_with_stats(targets, property_stats):
-    """Normalize raw targets with the selected training statistics."""
-    result = {}
-    for name, value in targets.items():
-        if name not in property_stats:
-            raise ValueError(f"Unknown property: {name}")
-        if value is None:
-            result[name] = None
-        else:
-            mean, std = property_stats[name]
-            result[name] = (float(value) - mean) / std
-    return result
-
-
 
 def canonical_smiles(smiles):
     if not smiles:
@@ -328,6 +294,7 @@ def main():
         config = json.load(handle)
 
     property_stats = load_property_stats(args.stats_file)
+    verify_stats_match_dataset(property_stats, args.training_smiles_csv)
     properties_config = config.get("properties")
     if not isinstance(properties_config, dict) or not properties_config:
         raise ValueError("Generation config must contain a nonempty 'properties' object.")
